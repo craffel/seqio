@@ -690,6 +690,10 @@ class MockVocabulary(object):
   def eos_id(self):
     return 1
 
+  @property
+  def largest_sentinel_id(self) -> Optional[int]:
+    return None
+
 
 def sentencepiece_vocab(extra_ids=0):
   return vocabularies.SentencePieceVocabulary(
