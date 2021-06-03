@@ -559,7 +559,7 @@ def test_task(
     is the result of running the tasks' preprocessing code on `raw_data` and
     `metrics` is a mapping from task name to computed metrics.
   """
-  output = test_preprocessing(task_name, raw_data)
+  output = test_preprocessing(task_name, raw_data)[0]
 
   eval_output = test_postprocessing(
       task_name,
@@ -570,12 +570,13 @@ def test_task(
 
 
 def test_preprocessing(
-    task_name: str, raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
+    task_name: str,
+    raw_data: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
   """Test the preprocessing functionality of a given task.
 
   This function injects `raw_data` into `task` and runs the preprocessing
   routines from `task`, returning the output of
-  `next(task.get_dataset().as_numpy_iterator())`.
+  `list(task.get_dataset().as_numpy_iterator())`.
 
   Args:
     task_name: A SeqIO task name.
@@ -586,9 +587,15 @@ def test_preprocessing(
   Returns:
     The result of running the tasks' preprocessing code on `raw_data`.
   """
+  if len(raw_data) > 1:
+    raise ValueError("test_preprocessing supports a single split in raw_data.")
+
   with DataInjector(task_name, raw_data):
+    split = list(raw_data.keys())[0]
     task = dataset_providers.get_mixture_or_task(task_name)
-    return next(task.get_dataset(sequence_length=None).as_numpy_iterator())
+    iterator = task.get_dataset(
+        sequence_length=None, split=split, shuffle=False).as_numpy_iterator()
+    return list(iterator)
 
 
 def test_postprocessing(
